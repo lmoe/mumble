@@ -12,7 +12,7 @@
 #include "Global.h"
 #include "MainWindow.h"
 #include "ServerHandler.h"
-#include <QJsonDocument>
+#include "SocketResponse.h"
 
 SocketRPCClient::SocketRPCClient(QLocalSocket *s, QObject *p) : QObject(p), qlsSocket(s), qbBuffer(NULL) {
 	qlsSocket->setParent(this);
@@ -23,6 +23,20 @@ SocketRPCClient::SocketRPCClient(QLocalSocket *s, QObject *p) : QObject(p), qlsS
 
 	qbBuffer = new QBuffer(&qbaOutput, this);
 	qbBuffer->open(QIODevice::WriteOnly);
+}
+
+QByteArray SocketRPCClient::serializeClass(const QObject &object)
+{
+    QVariantMap result;
+    int properties = object.metaObject()->propertyCount();
+
+    for(int i = object.metaObject()->propertyOffset(); i < properties; i++) {
+        QString key = QString::fromUtf8(object.metaObject()->property(i).name());
+        result.insert(key, object.metaObject()->property(i).read(&object));
+    }
+
+    QByteArray response = QJsonDocument::fromVariant(result).toJson(QJsonDocument::JsonFormat::Compact);
+    return response;
 }
 
 void SocketRPCClient::disconnected() {
@@ -38,12 +52,23 @@ void SocketRPCClient::readyRead() {
     QJsonParseError* error = new QJsonParseError();
 
     const QJsonDocument& parsedRequest = QJsonDocument::fromJson(result, error);
+    SocketResponse response;
 
     if (error->error == QJsonParseError::NoError) {
-        qlsSocket->write("{\"ok\": true, \"error\": false}");
+
     } else {
-        qlsSocket->write("{\"ok\": false, \"error\": true}");
+
     }
+
+    this->write(response);
+}
+
+void SocketRPCClient::write(const SocketResponse& response) {
+    const QByteArray& jsonResponse = this->serializeClass(response);
+
+    qDebug() << "Responding";
+    qDebug() << jsonResponse;
+    this->qlsSocket->write(jsonResponse);
 }
 
 void SocketRPCClient::processRequest(const QJsonDocument& request) {

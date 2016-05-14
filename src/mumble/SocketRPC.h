@@ -12,6 +12,7 @@
 #include <QtCore/QXmlStreamReader>
 #include <QtNetwork/QLocalSocket>
 #include <QJsonDocument>
+#include "SocketResponse.h"
 
 class QBuffer;
 class QLocalServer;
@@ -20,6 +21,8 @@ class SocketRPCClient : public QObject {
 	private:
 		Q_OBJECT
 		Q_DISABLE_COPY(SocketRPCClient)
+
+        QByteArray serializeClass(const QObject& object);
 	protected:
 		QLocalSocket *qlsSocket;
 		QXmlStreamReader qxsrReader;
@@ -27,9 +30,12 @@ class SocketRPCClient : public QObject {
 		QBuffer *qbBuffer;
 		QByteArray qbaOutput;
 
+        void write(const SocketResponse& response);
         void processRequest(const QJsonDocument& request);
+
 	public:
 		SocketRPCClient(QLocalSocket *s, QObject *p = NULL);
+
 	public slots:
 		void disconnected();
 		void error(QLocalSocket::LocalSocketError);
