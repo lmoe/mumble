@@ -11,6 +11,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QXmlStreamReader>
 #include <QtNetwork/QLocalSocket>
+#include <QJsonDocument>
 
 class QBuffer;
 class QLocalServer;
@@ -26,7 +27,7 @@ class SocketRPCClient : public QObject {
 		QBuffer *qbBuffer;
 		QByteArray qbaOutput;
 
-		void processXml();
+        void processRequest(const QJsonDocument& request);
 	public:
 		SocketRPCClient(QLocalSocket *s, QObject *p = NULL);
 	public slots:
@@ -44,7 +45,7 @@ class SocketRPC : public QObject {
 	public:
 		typedef QMap<QString, QVariant> ParameterMap;
 		SocketRPC(const QString &basename, QObject *p = NULL);
-		static bool send(const QString &basename, const QString &request, const ParameterMap &param = ParameterMap());
+
 	public slots:
 		void newConnection();
 };
