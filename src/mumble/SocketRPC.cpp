@@ -55,9 +55,10 @@ void SocketRPCClient::readyRead() {
     SocketResponse response;
 
     if (error->error == QJsonParseError::NoError) {
-
+        response.setOk(true);
     } else {
-
+        response.setOk(false);
+        response.setErrorMessage(error->errorString());
     }
 
     this->write(response);
